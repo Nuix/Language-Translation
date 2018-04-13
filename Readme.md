@@ -1,3 +1,4 @@
+
 Language Translation
 ====================
 
@@ -39,6 +40,7 @@ Setting | Description
 **Translation operation** | Select the operation you would like to perform
 **Translation language\*** | Select the target translation language
 **Save as default translation language\*** | Optionally saves the selected Translation language as the default
+
 \* - Available when `Translate text` Translation option is selected
 
 Translation operation | Description

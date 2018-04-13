@@ -1,9 +1,6 @@
 @script_directory = File.dirname(__FILE__)
 require File.join(@script_directory, "Nx.jar")
 
-require 'easy_translate'
-require 'json'
-
 java_import "com.nuix.nx.NuixConnection"
 java_import "com.nuix.nx.LookAndFeelHelper"
 java_import "com.nuix.nx.dialogs.CommonDialogs"
@@ -13,6 +10,15 @@ java_import "com.nuix.nx.dialogs.TabbedCustomDialog"
 LookAndFeelHelper.setWindowsIfMetal
 NuixConnection.setUtilities($utilities)
 NuixConnection.setCurrentNuixVersion(NUIX_VERSION)
+
+begin
+	require 'easy_translate'
+rescue Exception => exc
+	CommonDialogs.showError("Error resolving dependency 'easy_translate'.  Did you install the Ruby gem?")
+	exit 1
+end
+
+require 'json'
 
 # hash of languages
 # { "en" => "english" }

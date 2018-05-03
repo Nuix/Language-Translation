@@ -4,7 +4,7 @@ Language Translation
 
 ![Last tested in Nuix 7.4](https://img.shields.io/badge/Nuix-7.4-green.svg)
 
-View the GitHub project [here](https://github.com/NuixSDK/Language-Translation) or download the latest release [here](https://github.com/NuixSDK/Language-Translation/releases).
+View the GitHub project [here](https://github.com/Nuix/Language-Translation) or download the latest release [here](https://github.com/Nuix/Language-Translation/releases).
 
 ## Overview
 The Language Translation script will translate the text of items into another language. The script can also detect the language of the text and clear translated text.

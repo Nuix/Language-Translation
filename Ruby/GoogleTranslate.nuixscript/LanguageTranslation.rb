@@ -71,8 +71,10 @@ def detect(item)
 	mymatch =  /(^.*?)\n---+Tran/m.match(item.getTextObject.toString)
 	txt = item.getTextObject.toString
 	txt = mymatch[1] if not mymatch.nil?
-	langs = EasyTranslate.detect(txt)
-	item.getCustomMetadata().putText("Detected Languages", langs.to_s)
+	langs = EasyTranslate.detect(txt).to_s
+	language = "#{@langs[langs].capitalize} (#{langs})"
+	item.getCustomMetadata().putText("Detected Languages", language)
+	item.addTag("Detected Languages|#{language}")
 end
 
 def translate(item, target_language)

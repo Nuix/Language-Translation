@@ -1,4 +1,4 @@
-
+﻿
 Language Translation
 ====================
 
@@ -23,7 +23,7 @@ You will need a Google Cloud Platform account to access the Google Cloud Transla
 ### Easy Translate Gem
 The script makes use of a RubyGem which must be installed using the following command run via Command Prompt from your Nuix Workstation installation directory
 
-`c:\Program Files\Nuix\Nuix 7.4>java -Xmx500M -classpath lib\* org.jruby.Main --command gem install easy_translate --user-install`
+`c:\Program Files\Nuix\Nuix 7.4>jre\bin\java -Xmx500M -classpath lib\* org.jruby.Main --command gem install easy_translate --user-install`
 
 ## Setup
 

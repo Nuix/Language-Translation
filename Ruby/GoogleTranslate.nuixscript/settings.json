@@ -1,4 +1,6 @@
 {
   "googleTranslateApiKey": "",
-  "defaultLanguage": "english"
+  "defaultLanguage": "english",
+  "topLevelTag": "Detected Languages",
+  "customMetadataFieldName": "Detected Languages"
 }

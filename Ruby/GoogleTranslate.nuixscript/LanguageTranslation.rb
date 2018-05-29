@@ -29,7 +29,10 @@ require 'json'
 if File.exist?(File.join(@script_directory, "settings.json"))
 	JSON.parse(File.read(File.join(@script_directory, "settings.json")))
 else
-	{"googleTranslateApiKey" => "", "defaultLanguage" => "english"}
+	{"googleTranslateApiKey" => "",
+	"customMetadataFieldName" => "Detected Languages",
+	"defaultLanguage" => "english",
+	"topLevelTag" => "Detected Languages"}
 end
 
 # Setup the dialog
@@ -40,11 +43,21 @@ main_tab = dialog.addTab("main_tab", "Translation")
 translation_options = [
 	"Detect languages",
 	"Translate text",
+	"Detect languages and translate text",
 	"Clear translations"
 ]
 
 main_tab.appendTextField("google_translate_api_key", "Google Translate API Key", @settings["googleTranslateApiKey"])
 main_tab.appendComboBox("translation_operation", "Translation operation", translation_options)
+
+main_tab.appendSeparator("Detection Options")
+main_tab.appendCheckBox("apply_custom_metadata", "Apply detected language as custom metadata?", false)
+main_tab.appendTextField("custom_metadata_field_name", "Custom Metadata Field Name", @settings["customMetadataFieldName"])
+main_tab.appendCheckBox("tag_items", "Tag items with detected language?", false)
+main_tab.appendTextField("top_level_tag", "Top-level tag", @settings["topLevelTag"])
+main_tab.enabledOnlyWhenChecked("custom_metadata_field_name", "apply_custom_metadata")
+main_tab.enabledOnlyWhenChecked("top_level_tag", "tag_items")
+
 main_tab.appendSeparator("Translation Options")
 main_tab.appendComboBox("translation_language", "Translation language", @langs.values)
 main_tab.appendCheckBox("save_translation_lang", "Save as default translation language", false)
@@ -52,29 +65,58 @@ main_tab.appendCheckBox("save_translation_lang", "Save as default translation la
 # Set default language
 main_tab.getControl("translation_language").setSelectedItem(@settings["defaultLanguage"])
 
-# Set enabled state of Translation options
-def set_translation_options_enabled(enabled, main_tab)
-	main_tab.getControl("translation_language").setEnabled(enabled)
-	main_tab.getControl("save_translation_lang").setEnabled(enabled)
+# Set enabled state of options
+def set_options_enabled(main_tab)
+	operation = main_tab.getText("translation_operation")
+	
+	translation_options_enabled = false
+	detection_options_enabled = false
+	
+	case operation.downcase!
+	when "detect languages"
+		translation_options_enabled = false
+		detection_options_enabled = true
+	when "translate text"
+		translation_options_enabled = true
+		detection_options_enabled = false
+	when "detect languages and translate text"
+		translation_options_enabled = true
+		detection_options_enabled = true
+	when "clear translations"
+		translation_options_enabled = false
+		detection_options_enabled = false
+	end
+	
+	main_tab.getControl("translation_language").setEnabled(translation_options_enabled)
+	main_tab.getControl("save_translation_lang").setEnabled(translation_options_enabled)
+	
+	main_tab.getControl("apply_custom_metadata").setEnabled(detection_options_enabled)
+	main_tab.getControl("custom_metadata_field_name").setEnabled(detection_options_enabled && main_tab.isChecked("apply_custom_metadata"))
+	main_tab.getControl("tag_items").setEnabled(detection_options_enabled)
+	main_tab.getControl("top_level_tag").setEnabled(detection_options_enabled && main_tab.isChecked("tag_items"))
 end
 
 # Update translation language enabled state when translation operation changes
 main_tab.getControl("translation_operation").addActionListener do
-	operation = main_tab.getText("translation_operation")
-	set_translation_options_enabled(operation.eql?("Translate text"), main_tab)
+	set_options_enabled(main_tab)
 end
 
 # disable the translation options by default
-set_translation_options_enabled(false, main_tab)
+set_options_enabled(main_tab)
 
-def detect(item)
-	mymatch =  /(^.*?)\n---+Tran/m.match(item.getTextObject.toString)
+def detect(item, apply_custom_metadata, tag_item)
+	mymatch = /(^.*?)\n---+Tran/m.match(item.getTextObject.toString)
 	txt = item.getTextObject.toString
 	txt = mymatch[1] if not mymatch.nil?
 	langs = EasyTranslate.detect(txt).to_s
 	language = "#{@langs[langs].capitalize} (#{langs})"
-	item.getCustomMetadata().putText("Detected Languages", language)
-	item.addTag("Detected Languages|#{language}")
+	if(apply_custom_metadata)
+		item.getCustomMetadata().putText(@settings["customMetadataFieldName"], language)
+	end
+	
+	if(tag_item)
+		item.addTag("#{@settings["topLevelTag"]}|#{language}")
+	end
 end
 
 def translate(item, target_language)
@@ -109,6 +151,16 @@ dialog.validateBeforeClosing do |values|
 		next false
 	end
 	
+	if values["apply_custom_metadata"] && values["custom_metadata_field_name"].strip.empty?
+		CommonDialogs.showWarning("Please provide a Custom Metadata Field Name.")
+		next false
+	end
+	
+	if values["tag_items"] && values["top_level_tag"].strip.empty?
+		CommonDialogs.showWarning("Please provide a Top-level tag.")
+		next false
+	end
+	
 	next true
 end
 
@@ -117,7 +169,25 @@ dialog.display
 if dialog.getDialogResult
 	input = dialog.toMap
 	
-	EasyTranslate.api_key = input["google_translate_api_key"].strip
+	annotateItems = false
+	tagItems = false
+	# update settings
+	@settings["googleTranslateApiKey"] = input["google_translate_api_key"].strip
+	if(input["save_translation_lang"])
+		@settings["defaultLanguage"] = input["translation_language"]
+	end
+	
+	if(input["apply_custom_metadata"])
+		@settings["customMetadataFieldName"] = input["custom_metadata_field_name"].strip
+		annotateItems = true
+	end
+	
+	if(input["tag_items"])
+		@settings["topLevelTag"] = input["top_level_tag"].strip
+		tagItems = true
+	end
+	
+	EasyTranslate.api_key = @settings["googleTranslateApiKey"]
 	
 	items = $current_selected_items
 	operation = main_tab.getText("translation_operation")
@@ -146,8 +216,16 @@ if dialog.getDialogResult
 					when "Detect languages"
 						pd.setMainStatus("Detecting Languages")
 						pd.logMessage("Detecting language (#{main_progress}/#{items.size}): [Item GUID: #{item.getGuid}]")
-						detect(item)
+						detect(item, annotateItems, tagItems)
 					when "Translate text"
+						pd.setMainStatus("Translating")
+						pd.logMessage("Translating text (#{main_progress}/#{items.size}): [Item GUID: #{item.getGuid}]")
+						translate(item, input["translation_language"])
+					when "Detect languages and translate text"
+						pd.setMainStatus("Detecting Languages")
+						pd.logMessage("Detecting language (#{main_progress}/#{items.size}): [Item GUID: #{item.getGuid}]")
+						detect(item, annotateItems, tagItems)
+						
 						pd.setMainStatus("Translating")
 						pd.logMessage("Translating text (#{main_progress}/#{items.size}): [Item GUID: #{item.getGuid}]")
 						translate(item, input["translation_language"])
@@ -162,13 +240,9 @@ if dialog.getDialogResult
 			pd.logMessage("Aborting...")
 		end
 		
-		# update and save settings
-		@settings["googleTranslateApiKey"] = input["google_translate_api_key"].strip
-		if(input["save_translation_lang"])
-			@settings["defaultLanguage"] = input["translation_language"]
-		end
-		save_settings
-		
 		pd.logMessage("Completed!")
 	end
+	
+	# save settings
+	save_settings
 end

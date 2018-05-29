@@ -38,15 +38,21 @@ Setting | Description
 ------- | -----------
 **Google Translate API Key** | API Key provided by Google. The API Key is saved in the `settings.json` file located in the script directory and used to populate the field the next time the script is run
 **Translation operation** | Select the operation you would like to perform
-**Translation language\*** | Select the target translation language
-**Save as default translation language\*** | Optionally saves the selected Translation language as the default
+**Apply detected language as custom metadata?\*** | Applies the detected language as item custom metadata
+**Custom Metadata Field Name** | Defines the custom metadata field name used to store the detected language value
+**Tag items with detected language?\*** | Tags items with the detected language
+**Top-level tag** | Defines the top-level tag of a nested tag structure to use when tagging detected languages
+**Translation language\*\*** | Select the target translation language
+**Save as default translation language\*\*** | Optionally saves the selected Translation language as the default
 
-\* - Available when `Translate text` Translation option is selected
+\* - Available when `Detect languages` or `Detect languages and translate text` is selected
+\*\* - Available when `Translate text` or `Detect languages and translate text` is selected
 
 Translation operation | Description
 --------------------- | ------------
-**Detect languages** | Detects the language of selected items and saves results in the item's custom metadata
+**Detect languages** | Detects the language of selected items and applies Detection Options
 **Translate text** | Translates the text of selected items. Translated text is stored in the item's text object
+**Detect languages and translate text** | Performs both the `Detect languages` and `Translate text` operations
 **Clear translations** | Removes the translated text from the item's text object. Item's original text will remain
 
 # License

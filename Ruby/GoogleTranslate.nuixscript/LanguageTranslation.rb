@@ -108,14 +108,21 @@ def detect(item, apply_custom_metadata, tag_item)
 	mymatch = /(^.*?)\n---+Tran/m.match(item.getTextObject.toString)
 	txt = item.getTextObject.toString
 	txt = mymatch[1] if not mymatch.nil?
-	langs = EasyTranslate.detect(txt).to_s
-	language = "#{@langs[langs].capitalize} (#{langs})"
-	if(apply_custom_metadata)
-		item.getCustomMetadata().putText(@settings["customMetadataFieldName"], language)
-	end
 	
-	if(tag_item)
-		item.addTag("#{@settings["topLevelTag"]}|#{language}")
+	if(!txt.empty?)
+		langs = EasyTranslate.detect(txt).to_s
+		
+		# Google returns "und" (undefined) if the language has not been detected
+		if(!langs.eql?("und"))
+			language = "#{@langs[langs].capitalize} (#{langs})"
+			if(apply_custom_metadata)
+				item.getCustomMetadata().putText(@settings["customMetadataFieldName"], language)
+			end
+			
+			if(tag_item)
+				item.addTag("#{@settings["topLevelTag"]}|#{language}")
+			end
+		end
 	end
 end
 
@@ -124,9 +131,13 @@ def translate(item, target_language)
 	txt = item.getTextObject.toString
 	txt = mymatch[1] if not mymatch.nil?
 	
-	translated = EasyTranslate.translate(txt, :format => 'text', :to => @langs.key(target_language) )
-	newtext = item.getTextObject.toString + "\n----------Translation to #{target_language}----------\n" + translated
-	item.modify { |modifier| modifier.replace_text(newtext) }
+	if(!txt.empty?)
+		translated = EasyTranslate.translate(txt, :format => 'text', :to => @langs.key(target_language) )
+		if(!translated.empty?)
+			newtext = item.getTextObject.toString + "\n----------Translation to #{target_language}----------\n" + translated
+			item.modify { |modifier| modifier.replace_text(newtext) }
+		end
+	end
 end
 
 def clear_translation(item)

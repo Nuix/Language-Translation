@@ -45,8 +45,7 @@ Setting | Description
 **Translation language\*\*** | Select the target translation language
 **Save as default translation language\*\*** | Optionally saves the selected Translation language as the default
 
-\* - Available when `Detect languages` or `Detect languages and translate text` is selected
-\*\* - Available when `Translate text` or `Detect languages and translate text` is selected
+**\*** - Available when `Detect languages` or `Detect languages and translate text` is selected<br>**\*\*** - Available when `Translate text` or `Detect languages and translate text` is selected
 
 Translation operation | Description
 --------------------- | ------------
